@@ -1,0 +1,19 @@
+# application.yml
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+  application:
+    name: ja-backend
+
+  # ── JPA 공통 ──────────────────────────────
+  jpa:
+    open-in-view: false
+
+  # ── OAuth2 공통 리다이렉트 ─────────────────
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
