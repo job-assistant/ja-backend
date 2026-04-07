@@ -1,6 +1,7 @@
 package com.jobassistant.jabackend.core.security.config;
 
 import com.jobassistant.jabackend.core.security.SecurityProperties;
+import com.jobassistant.jabackend.core.security.filter.DevAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -10,9 +11,12 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Optional;
 
 @Configuration
 @EnableWebSecurity
@@ -21,6 +25,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private final SecurityProperties securityProperties;
+    private final Optional<DevAuthFilter> devAuthFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
@@ -36,6 +41,9 @@ public class SecurityConfig {
                         r.requestMatchers(securityProperties.getPublicUris().toArray(String[]::new)).permitAll()
                                 .anyRequest().authenticated()
                 );
+
+        devAuthFilter.ifPresent(filter ->
+                http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class));
 
         return http.build();
     }
