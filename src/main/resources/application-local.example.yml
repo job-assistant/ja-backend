@@ -1,33 +1,45 @@
 # application-local.example.yml
 # 복사 후 application-local.yml로 이름 변경하여 사용
 # cp src/main/resources/application-local.example.yml src/main/resources/application-local.yml
+
 server:
   port: 8080
 
 spring:
-  # ── Database ──────────────────────────────
+  # ── Database ──────────────────────────────────────────────
   datasource:
     url: jdbc:postgresql://localhost:5432/job
     username: job
     password: your_db_password
     driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: JobHikariPool
+      minimum-idle: 5
+      maximum-pool-size: 10
+      idle-timeout: 600000          # 10분
+      connection-timeout: 30000     # 30초
+      max-lifetime: 1800000         # 30분
+      keepalive-time: 60000         # 1분
+      connection-test-query: SELECT 1
+
+  # ── JPA ───────────────────────────────────────────────────
   jpa:
     hibernate:
-      ddl-auto: validate          # init/ SQL로 스키마 관리하므로 validate 권장
+      ddl-auto: validate            # init/ SQL로 스키마 관리
     show-sql: true
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
-  # ── Redis ─────────────────────────────────
+  # ── Redis ─────────────────────────────────────────────────
   data:
     redis:
       host: localhost
       port: 6379
       password: your_redis_password
 
-  # ── OAuth2 Google ─────────────────────────
+  # ── OAuth2 Google ─────────────────────────────────────────
   security:
     oauth2:
       client:
@@ -39,20 +51,60 @@ spring:
               - email
               - profile
 
-# ── JWT ───────────────────────────────────
+# ── Security & CORS ───────────────────────────────────────
+security:
+  public-uris:
+    - /swagger-ui/**
+    - /swagger-ui.html
+    - /api-docs/**
+    - /v3/api-docs/**
+    - /login/oauth2/**
+    - /oauth2/**
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:5173
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - HEAD
+      - OPTIONS
+    allowed-headers:
+      - "*"
+    allow-credentials: true
+
+# ── Swagger ───────────────────────────────────────────────
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /api-docs
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+# ── JWT ───────────────────────────────────────────────────
 job:
   jwt:
     secret: your_jwt_secret_must_be_at_least_32_characters
-    access-token-ttl: 3600      # 1시간 (초)
-    refresh-token-ttl: 604800   # 7일 (초)
+    access-token-ttl: 3600          # 1시간 (초)
+    refresh-token-ttl: 604800       # 7일 (초)
 
-  # ── Agent 서버 연동 ───────────────────────
+  # ── Agent 서버 연동 ───────────────────────────────────────
   agent:
     base-url: http://localhost:8000
 
-# ── Logging ───────────────────────────────
+# ── Logging ───────────────────────────────────────────────
 logging:
   level:
     root: INFO
     com.jobassistant: DEBUG
     org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss} %highlight(%-5level) %cyan(%logger{36}) - %msg%n"
